@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+data/*
+!data/.gitkeep
+artifacts/
+.aws/
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.coverage

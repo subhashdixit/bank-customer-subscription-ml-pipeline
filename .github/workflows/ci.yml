@@ -1,0 +1,35 @@
+name: Test and build
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -e '.[dev]'
+      - run: python -m pytest -q
+      - name: Download public data
+        run: python -m bank_ml.data
+      - name: Train baseline
+        run: python -m bank_ml.train
+      - name: Check prediction
+        run: python -m bank_ml.predict
+      - name: Build container
+        run: docker build -t bank-ml:test .
+      - name: Check running container
+        shell: bash
+        run: |
+          docker run -d --name bank-ml -p 127.0.0.1:8000:8000 bank-ml:test
+          trap 'docker logs bank-ml; docker rm -f bank-ml' EXIT
+          ready=false
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/health; then ready=true; break; fi
+            sleep 2
+          done
+          test "$ready" = true
+          curl --fail --silent -H 'Content-Type: application/json' --data @examples/customer.json http://127.0.0.1:8000/predict

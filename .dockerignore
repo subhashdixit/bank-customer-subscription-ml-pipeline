@@ -1,0 +1,7 @@
+*
+!pyproject.toml
+!src/
+!src/**
+!artifacts/
+!artifacts/model.joblib
+**/__pycache__/
