@@ -4,11 +4,11 @@ permissions:
   contents: read
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - run: python -m pip install -e '.[dev]'
@@ -32,4 +32,4 @@ jobs:
             sleep 2
           done
           test "$ready" = true
-          curl --fail --silent -H 'Content-Type: application/json' --data @examples/customer.json http://127.0.0.1:8000/predict
+          python scripts/check_api.py

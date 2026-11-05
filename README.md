@@ -4,7 +4,7 @@ Learn how a machine learning application moves from a dataset to predictions, a 
 
 **Problem:** a bank wants to prioritise customers for a term-deposit marketing call. We estimate subscription likelihood using information available before contact. This is an educational baseline, not a production banking decision system.
 
-**Cost approach:** development and inference run on your own computer. No AWS resources are provisioned. GitHub Actions on this private repository uses your account's included allowance; check billing before running it. Public repositories have free standard hosted runners, with separate storage allowances.
+**Cost approach:** development and inference run on your own computer. No AWS resources are provisioned. This repository is public. Standard GitHub-hosted runners are free for public repositories; storage and other runner types have separate billing rules.
 
 ## Start here
 
@@ -26,6 +26,7 @@ While the API runs, open http://127.0.0.1:8000/docs to send a prediction. Stop i
 
 ## Learning guide
 
+0. [Study guide: architecture, code walkthrough, CI explained and exercises](docs/00-study-guide.md)
 1. [Beginner handbook: setup, data, training, predictions, API, Docker, Git and CI](docs/01-beginner-handbook.md)
 2. [Data card and model limitations](docs/02-data-and-model.md)
 3. [AWS architecture and staged deployment roadmap](docs/03-aws-roadmap.md)

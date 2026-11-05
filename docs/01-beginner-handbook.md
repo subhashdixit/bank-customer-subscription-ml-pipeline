@@ -156,7 +156,7 @@ On a push, pull request, or manual dispatch, it checks out the code, installs Py
 
 View progress under the repository's Actions tab. A green run means those checks passed for that commit. It does not mean AWS deployment succeeded: this workflow never deploys to AWS. Downloads can fail if UCI is unavailable; read the failed step's log.
 
-The repository is private initially. Hosted CI uses your GitHub plan allowance; inspect GitHub billing before triggering frequent runs. The workflow has a 15-minute timeout and read-only repository permissions. It does not upload large datasets or models as artifacts.
+The repository is public. Standard GitHub-hosted runners are free for public repositories; other runner types and storage have separate billing rules. The workflow has a 15-minute timeout and read-only repository permissions. It does not upload large datasets or models as artifacts.
 
 ## 12. How we continue
 
