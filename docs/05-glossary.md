@@ -1,4 +1,4 @@
-# Plain-language glossary
+# Bank Customer Subscription ML Deployment — Plain-Language Glossary
 
 | Term | Meaning here |
 | --- | --- |

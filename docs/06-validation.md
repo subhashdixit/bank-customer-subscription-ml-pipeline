@@ -1,4 +1,4 @@
-# Actual validation record
+# Bank Customer Subscription ML Deployment — Validation Record
 
 ## Local checks, 6 November 2026
 

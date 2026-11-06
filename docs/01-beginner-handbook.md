@@ -1,4 +1,4 @@
-# Your first end-to-end ML application
+# Bank Customer Subscription ML Deployment — Beginner Handbook
 
 ## 1. The problem and our first milestone
 

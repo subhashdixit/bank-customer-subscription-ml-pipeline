@@ -1,4 +1,4 @@
-# Bank customer subscription ML pipeline
+# Bank Customer Subscription ML Deployment
 
 Learn how a machine learning application moves from a dataset to predictions, a Docker container, automated checks, and eventually AWS.
 

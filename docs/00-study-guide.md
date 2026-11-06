@@ -1,4 +1,4 @@
-# Bank ML deployment: your study guide
+# Bank Customer Subscription ML Deployment — Study Guide
 
 Use this page as the table of contents for your learning. It explains how the pieces connect; the [hands-on handbook](01-beginner-handbook.md) supplies the commands. You can read both without knowing AWS.
 
