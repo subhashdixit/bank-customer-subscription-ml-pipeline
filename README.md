@@ -732,6 +732,12 @@ Optional provider success, invalid output, forged IDs and timeout behaviour were
 
 Hosted verification run: https://github.com/subhashdixit/bank-customer-subscription-ml-pipeline/actions/runs/42410350256
 
+### Final integrated pipeline verification, 8 November 2026
+
+Final executable revision: `c33ac18`. Hosted run [42410671032](https://github.com/subhashdixit/bank-customer-subscription-ml-pipeline/actions/runs/42410671032) **passed in 1 minute 11 seconds**: eight tests, six retrieval cases, synthetic software-check training, CLI prediction, Docker build, and real HTTP checks including the enriched briefing. The optional real-data job was deliberately skipped on this push. Initial run 42410350256 failed at the UCI download timeout; it is not a successful full run. The README-only evidence update skips CI.
+
+This final evidence verifies the integrated ML/retrieval software and simulated LLM adapter, not a live LLM provider, model-quality improvement or AWS deployment. Chapter 33 explains how to enable the optional provider safely.
+
 ## 32. Glossary
 
 | Term | Meaning here |
