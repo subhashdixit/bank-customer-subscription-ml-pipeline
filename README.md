@@ -1,5 +1,9 @@
 # Bank Customer Subscription ML Deployment
 
+**Live demo:** [Open the bank customer subscription app](https://bank-customer-subscription.onrender.com/) · [API explorer](https://bank-customer-subscription.onrender.com/docs)
+
+Hosted on Render Free. If asleep, allow around a minute for the first load. Use fictional customer details only.
+
 A single, step-by-step learning book: business problem, local development, model evaluation, APIs, Docker, CI/CD, AWS deployment design, monitoring, drift, retraining and scaling.
 
 **Start here:** chapters 01–18 cover the currently implemented local/CI system; chapters 19–27 explain the full intended lifecycle and clearly label planned implementations. Chapters 28–32 provide troubleshooting, exercises, next steps, evidence and terminology. No AWS resources are created by reading or running the current local pipeline.
@@ -750,6 +754,14 @@ Final executable revision: `c33ac18`. Hosted run [42410671032](https://github.co
 
 This final evidence verifies the integrated ML/retrieval software and simulated LLM adapter, not a live LLM provider, model-quality improvement or AWS deployment. Chapter 33 explains how to enable the optional provider safely.
 
+### Flask and Render deployment verification, 8 November 2026
+
+Executable revision `2ae763b` passed [GitHub CI run 42412474525](https://github.com/subhashdixit/bank-customer-subscription-ml-pipeline/actions/runs/42412474525) in 1 minute 6 seconds, including ten tests, six retrieval checks, the web container and the local SageMaker-compatible wrapper. Local JavaScript syntax, Python compilation, README references and release integrity were checked. The EC2 template passed local `cfn-lint`; this does not verify actual AWS permissions, networking or startup.
+
+Render service `bank-customer-subscription` was created on the **Free** plan in Oregon from that revision, with `/health`, LLM calls disabled, and subsequent auto-deploy configured for passing CI. Render reported “Deploy succeeded | Live.” The HTTPS page and original/enriched prediction endpoints passed real HTTP checks against the committed real-data release. Browser testing confirmed that the form displays the fictional example score (approximately 4.62%) and cited product terms.
+
+The local web container used approximately 133 MiB under a 512 MiB limit during a smoke check; this is not a load/capacity guarantee. Temporary local web/inference containers are removed after verification. No paid Render tier or AWS resources were created. Live provider/LLM calls remain unconfigured and disabled for public requests.
+
 ## 32. Glossary
 
 | Term | Meaning here |
@@ -1062,7 +1074,14 @@ The instance's startup script installs Docker, authenticates to ECR using its ro
 4. Publish the amd64 image and copy its ECR digest URI.
 5. Inspect the template, particularly role permissions, ingress and user data. It is locally reviewed but not executed on AWS.
 
-Syntax/service validation and actual creation are different:
+Local schema linting is available without an AWS account:
+
+```bash
+python -m pip install cfn-lint
+cfn-lint infra/aws/ec2.yaml
+```
+
+Linting passed during this implementation. Syntax/service validation and actual creation are different:
 
 ```bash
 aws cloudformation validate-template --region ap-southeast-1 --template-body file://infra/aws/ec2.yaml
