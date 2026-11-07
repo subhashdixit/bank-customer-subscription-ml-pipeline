@@ -1,5 +1,13 @@
 name: Test and build
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      real_data:
+        description: 'Also download UCI data and train/evaluate the real baseline'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -15,10 +23,10 @@ jobs:
       - run: python -m pytest -q
       - name: Check product retrieval
         run: python scripts/evaluate_retrieval.py
-      - name: Download public data
-        run: python -m bank_ml.data
-      - name: Train baseline
-        run: python -m bank_ml.train
+      - name: Generate synthetic smoke-test data
+        run: python scripts/make_smoke_data.py
+      - name: Train smoke-test model (not a release model)
+        run: python -m bank_ml.train --data data/smoke.csv
       - name: Check prediction
         run: python -m bank_ml.predict
       - name: Build container
@@ -35,3 +43,19 @@ jobs:
           done
           test "$ready" = true
           python scripts/check_api.py
+
+  real-data:
+    if: github.event_name == 'workflow_dispatch' && inputs.real_data
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python -m pip install .
+      - name: Download real UCI dataset
+        run: python -m bank_ml.data
+      - name: Train and evaluate real baseline
+        run: python -m bank_ml.train
+      - run: python -m bank_ml.predict

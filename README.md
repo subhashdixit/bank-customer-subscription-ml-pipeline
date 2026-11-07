@@ -94,7 +94,7 @@ flowchart TD
 
 **Serving path:** a running program receives a customer, checks it, transforms it with saved preprocessing, and predicts. It keeps running to handle more requests. It does not train on incoming requests.
 
-**Automation path:** GitHub starts a temporary computer that repeats tests, training and container checks. That computer is removed after the job. It is not a permanent prediction server.
+**Automation path:** GitHub starts a temporary computer that repeats tests, synthetic smoke training and container checks. An optional manual job performs real-data training. That computer is removed after the job. It is not a permanent prediction server.
 
 The intended full lifecycle is: business goal → versioned raw data → validation → training/validation/test → evaluated candidate → approval → versioned release → serving → monitoring → delayed outcomes → investigation → candidate retraining. Monitoring feeds back into development; it is not the last task before forgetting the model.
 
@@ -403,7 +403,7 @@ Read `git diff` before staging. `git add` selects changes; `git commit` saves th
 
 ## 17. CI pipeline explained step by step
 
-The current job uses Ubuntu 24.04 and Python 3.11. GitHub's action runtime is separate from application Python: checkout/setup actions use Node.js internally, while our model runs in Python.
+The current job uses Ubuntu 24.04 and Python 3.11. Routine CI uses generated synthetic data to avoid depending on UCI availability; it verifies software, not real predictive performance. GitHub's action runtime is separate from application Python: checkout/setup actions use Node.js internally, while our model runs in Python.
 
 | Workflow component | What happens | Typical failure |
 | --- | --- | --- |
@@ -415,8 +415,8 @@ The current job uses Ubuntu 24.04 and Python 3.11. GitHub's action runtime is se
 | Setup Python action | Select Python 3.11 | Runtime download problem |
 | Install | Build our package and install dependencies | Dependency resolution/network error |
 | Pytest | Check code using generated data | Behaviour differs from assertions |
-| Download | Fetch real UCI data | External source unavailable |
-| Train | Fit and evaluate on real data | Schema/label error |
+| Generate smoke data | Create deterministic synthetic customer rows | Broken fixture script |
+| Train | Fit a synthetic smoke-test model, not a release | Schema/label error |
 | Predict | Load artifact and score example | Model or input mismatch |
 | Build | Package application and model | Missing artifact or failed installation |
 | Smoke check | Start container and probe actual HTTP requests | Startup, routing, contract or model mismatch |
@@ -724,6 +724,14 @@ This verifies the currently implemented local/CI pipeline. AWS, persistent deplo
 
 Consolidated the learning material into this README and removed the seven separate Markdown guides. Added a single chapter sequence and same-page contents, preserving attribution, measured results, commands and limitations. Expanded conceptual coverage for batch data, versioning, EC2, SageMaker, delivery, monitoring, drift, retraining and scaling. These additions describe planned components and do not claim new executable features. Checked Markdown structure, local file links and internal contents anchors. This documentation-only change does not alter the previously verified application or workflow.
 
+### Integrated retrieval verification, 8 November 2026
+
+Code commit: `dd05d49`. Local checks passed: eight pytest tests, six retrieval regression cases and `pip check`. Built the updated Docker image and verified real HTTP health, numerical prediction, invalid-input rejection and `/predict/briefing` score parity/product-scoped citations. Removed the temporary container after verification. The example customer retained probability approximately 0.046237.
+
+Optional provider success, invalid output, forged IDs and timeout behaviour were tested with HTTPX simulated responses. No live LLM provider call was made, no credentials were committed, and no AWS resources were created. The pre-existing local TestClient deprecation warning remains informational.
+
+Hosted verification run: https://github.com/subhashdixit/bank-customer-subscription-ml-pipeline/actions/runs/42410350256
+
 ## 32. Glossary
 
 | Term | Meaning here |
@@ -885,6 +893,12 @@ The new tests exercise product isolation, unknown questions, exact-source render
 
 Six handwritten retrieval checks cover both products, expected top matches and a no-overlap query. They are a regression fixture, not a general benchmark or proof of semantic understanding. Expand it with paraphrases, misleading overlaps, missing facts and adversarial questions before claiming broader retrieval quality.
 
-GitHub CI installs FAISS, runs tests and retrieval checks, trains the model, builds the container and sends real HTTP requests to both prediction endpoints. `scripts/check_api.py` verifies the same numerical score and product-scoped citations in the running container. No LLM secret is needed in CI. Live provider compatibility cannot be verified until a provider is configured; simulated adapter tests are labelled as such.
+GitHub CI installs FAISS, runs tests and retrieval checks, trains a synthetic smoke-test model, builds the container and sends real HTTP requests to both prediction endpoints. `scripts/check_api.py` verifies the same numerical score and product-scoped citations in the running container. No LLM secret is needed in CI. Live provider compatibility cannot be verified until a provider is configured; simulated adapter tests are labelled as such.
 
 For future monitoring, track retrieval hit/miss rates, question classes, response modes, provider timeouts, latency and cost, separately from predictive model metrics. Product-document updates require retrieval evaluation; they do not require classifier retraining. Keep the document hash, prompt/adapter version and provider model alongside release evidence. Public hosting, authentication, rate limits, neural embeddings and actual AWS deployment remain separate future work.
+
+### Real-data training versus routine CI
+
+The first RAG run passed tests/retrieval but failed on a 120-second UCI connection timeout. To keep software verification independent of that external source, routine CI now generates 300 deterministic synthetic rows using `scripts/make_smoke_data.py`. Its fitted model exists only for container/API checks, is not published as a release, and its metrics must not be presented as model-quality evidence. Local `python -m bank_ml.train` still uses real `data/bank-full.csv` by default and remains the source of the documented bank baseline metrics.
+
+To request real-data hosted verification, open Actions → Test and build → Run workflow and enable `real_data`. The additional job downloads UCI data and trains/evaluates it, and can fail independently if UCI is unavailable. Previous real-data evidence remains historical; it is not relabelled as a new successful run. Dependency installation still requires package services and Docker image downloads; this change removes the live dataset dependency from normal checks, not every network dependency.
