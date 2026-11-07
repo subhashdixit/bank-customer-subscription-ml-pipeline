@@ -1,0 +1,17 @@
+{
+  "customer": {
+    "age": 35,
+    "balance": 1200,
+    "previous": 1,
+    "job": "technician",
+    "marital": "married",
+    "education": "secondary",
+    "default": "no",
+    "housing": "yes",
+    "loan": "no",
+    "poutcome": "unknown"
+  },
+  "product_id": "demo-12-month",
+  "question": "minimum deposit duration early withdrawal eligibility",
+  "use_llm": false
+}

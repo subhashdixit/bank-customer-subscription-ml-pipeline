@@ -4,6 +4,8 @@ A single, step-by-step learning book: business problem, local development, model
 
 **Start here:** chapters 01–18 cover the currently implemented local/CI system; chapters 19–27 explain the full intended lifecycle and clearly label planned implementations. Chapters 28–32 provide troubleshooting, exercises, next steps, evidence and terminology. No AWS resources are created by reading or running the current local pipeline.
 
+The same prediction service now includes **product-scoped FAISS retrieval and an optional LLM-curated briefing**. Try the enriched endpoint in chapter 33. It does not change the classifier score or retrain the model.
+
 ## Contents
 
 - [01. Business problem and proposed solution](#01-business-problem-and-proposed-solution)
@@ -38,6 +40,7 @@ A single, step-by-step learning book: business problem, local development, model
 - [30. Implementation sequence from here](#30-implementation-sequence-from-here)
 - [31. Validation evidence and measured limitations](#31-validation-evidence-and-measured-limitations)
 - [32. Glossary](#32-glossary)
+- [33. Integrated product retrieval and optional LLM briefing](#33-integrated-product-retrieval-and-optional-llm-briefing)
 
 ## 01. Business problem and proposed solution
 
@@ -60,6 +63,7 @@ This README is the single learning document. Read it from top to bottom; the con
 | Public data download, preprocessing, training, evaluation | Implemented and tested |
 | Saved model, command-line prediction, FastAPI service | Implemented and tested |
 | Docker packaging and GitHub CI with real HTTP checks | Implemented and tested |
+| FAISS product retrieval, cited excerpts, optional constrained LLM curation | Implemented; live provider call requires configuration |
 | Batch scoring CLI, dataset/model registry, release manifests | Planned |
 | SageMaker-compatible local adapters and AWS deployment | Planned |
 | Monitoring, delayed-label evaluation, drift and retraining | Planned |
@@ -101,7 +105,11 @@ The intended full lifecycle is: business goal → versioned raw data → validat
 | `pyproject.toml` | Package metadata and dependency requirements | Yes |
 | `src/bank_ml/` | Importable application code | Yes |
 | `tests/` | Repeatable checks with synthetic data | Yes |
-| `scripts/check_api.py` | Smoke-check an actual running HTTP service | Yes |
+| `scripts/check_api.py` | Smoke-check numerical and enriched predictions over HTTP | Yes |
+| `src/bank_ml/rag.py` | FAISS retrieval, evidence rendering, optional LLM curation | Yes |
+| `src/bank_ml/knowledge/deposits.json` | Fictional versioned product passages | Yes |
+| `scripts/evaluate_retrieval.py` | Small retrieval regression set | Yes |
+| `.env.example` | Placeholder provider configuration, never real secrets | Yes |
 | `examples/customer.json` | Fictional valid input | Yes |
 | `data/` | Downloaded raw CSV and provenance | Only its placeholder |
 | `artifacts/` | Generated model and metrics | No |
@@ -345,7 +353,7 @@ Exercise: send an age of -1 to the API. Explain why it is better to reject it th
 
 The tests generate synthetic labelled rows, train into a temporary directory and load the resulting model. The API tests use an in-process client; the later smoke test sends real HTTP requests to a running container. Both are useful because an in-process test does not prove the Docker entry point or network path works.
 
-These are software checks. Model-quality gates, load tests, security tests and fairness evaluation are different checks, not implied by four passing tests.
+These are software checks. Model-quality gates, load tests and fairness evaluation are different checks. Chapter 33 adds retrieval, LLM-response validation and graceful-failure tests; the historical four-test record in chapter 31 describes the original baseline.
 
 ## 15. Docker build and container execution
 
@@ -414,6 +422,8 @@ The current job uses Ubuntu 24.04 and Python 3.11. GitHub's action runtime is se
 | Smoke check | Start container and probe actual HTTP requests | Startup, routing, contract or model mismatch |
 
 The readiness loop tries `/health` up to 30 times, waiting two seconds between attempts. Once ready, `scripts/check_api.py` checks health JSON, a finite probability in range, numerical agreement with the host model, and rejection of an invalid age. A trap prints container logs and removes the temporary container when the shell exits, including when a check fails. Model comparison uses a small numerical tolerance to allow tiny floating-point differences.
+
+The smoke script also checks `/predict/briefing`: the numerical score must match `/predict`, and citations must belong to the requested product. The workflow runs six small retrieval regression checks before training.
 
 The smoke script accepts `--url` for another local port and expects to run from the project root with the matching host artifact. A mismatch can indicate that the image contains an older model. It is stronger than merely checking that HTTP returned success.
 
@@ -749,3 +759,132 @@ Consolidated the learning material into this README and removed the seven separa
 | Infrastructure as code | Files describing resources to create and configure |
 | Drift | A change in data or relationships that may affect a model |
 | OIDC | Identity federation used to obtain temporary credentials without storing AWS keys in GitHub |
+
+## 33. Integrated product retrieval and optional LLM briefing
+
+### What has changed in the same project?
+
+The existing customer subscription model remains the source of the numerical score. A new `/predict/briefing` route accepts a customer, a selected demo product and a question. It returns that same score plus cited product information and follow-up questions. This is not a separate chatbot or a new predictive model.
+
+```mermaid
+flowchart TD
+    I[Customer + product ID + question] --> M[Original classifier]
+    I --> F[Select only this product's document chunks]
+    F --> V[Local TF-IDF vectors and FAISS retrieval]
+    V --> L{Request LLM and provider configured?}
+    L -->|Yes| C[LLM selects allowed evidence and question IDs]
+    L -->|No or failed| E[Deterministic extractive briefing]
+    C --> S[Validate selections; reject unknown IDs]
+    S --> R[Code renders source text and citations]
+    E --> R
+    M --> O[Response: original score + grounded briefing]
+    R --> O
+```
+
+The classifier is **not product-aware**: changing the selected product changes retrieved information, not its probability. Our historical training data has no matching product documents, so this integration cannot establish increased prediction accuracy. It improves the information delivered alongside the prediction.
+
+### The fictional knowledge collection
+
+`src/bank_ml/knowledge/deposits.json` contains two fictional demonstration products. Twelve-month terms specify INR 10,000 as the minimum; six-month terms specify INR 5,000. Each product has four short sections: minimum deposit, duration, withdrawal and eligibility. Interest rates are intentionally absent. These are project-authored learning examples, not real bank policies.
+
+Each section is one chunk with a stable ID. A tiny source already divided into short sections does not need an arbitrary overlapping chunk splitter. For longer documents, preserve section/source metadata while splitting, and evaluate how chunk size affects retrieval.
+
+The JSON is included as Python package data, so it is copied into the installed Docker application. `knowledge_version` identifies the authored collection, while `knowledge_sha256` fingerprints its exact bytes. Restart/rebuild after editing it. Old process memory and old images do not automatically acquire the new terms.
+
+### What FAISS does here
+
+`ProductKnowledge` fits one TF-IDF vectorizer and builds one FAISS `IndexFlatIP` per product at process startup. TF-IDF converts text into weighted word/bigram vectors; it requires no external model download or embedding API. We normalise vectors and use inner products as cosine similarity. [FAISS distance documentation](https://github.com/facebookresearch/faiss/wiki/MetricType-and-distances).
+
+This is a **lexical retrieval baseline**, not neural semantic embeddings. Synonyms can be missed, and shared words can retrieve weak evidence. Only positive-overlap passages are returned, up to four; a zero-vector query returns no evidence. Positive overlap is not a calibrated confidence score. A production abstention policy needs an evaluated threshold and broader queries. Neural sentence embeddings are a future improvement requiring retrieval comparison, pinned model versions and corresponding index rebuilds.
+
+Filtering happens before search by selecting a product-specific index, so another product's minimum cannot enter the candidate set. Indexes live in memory and are rebuilt from the small versioned JSON on startup. No separately managed vector database or persisted index service is required here. This is appropriate for eight chunks, not a claim about large-corpus scalability.
+
+### Run the enriched prediction without any key
+
+Use the earlier environment/training setup, then reinstall updated dependencies:
+
+```bash
+python -m pip install -e '.[dev]'
+python -m uvicorn bank_ml.api:app --host 127.0.0.1 --port 8000
+```
+
+In another terminal at the repository root:
+
+```bash
+curl http://127.0.0.1:8000/products
+curl -H 'Content-Type: application/json' --data @examples/briefing.json http://127.0.0.1:8000/predict/briefing
+```
+
+You can also use `/docs` and paste `examples/briefing.json` into POST `/predict/briefing`. `customer` contains the same ten fields used by the original endpoint. `product_id` chooses `demo-12-month` or `demo-6-month`; `question` controls retrieval; `use_llm` defaults to false. Unknown products return HTTP 404 when knowledge is available. Invalid customer fields return HTTP 422 before any LLM call.
+
+The response includes:
+
+| Field | Meaning |
+| --- | --- |
+| `subscription_probability` | Unmodified classifier result |
+| `briefing.product` | Selected fictional product |
+| `briefing.mode` | `extractive`, `llm_curated`, `no_evidence` or `unavailable` |
+| `briefing.llm_status` | Why generation was used, skipped or unavailable |
+| `briefing.product_information` | Exact excerpts linked by `source_id` |
+| `briefing.sources` | Retrieved text, section, document, version and similarity |
+| `briefing.questions_to_confirm` | Fixed safe follow-up questions |
+| `briefing.knowledge_version` and `knowledge_sha256` | Collection provenance |
+| `briefing.limitations` | Product, currency and model limitations |
+
+No key is required for `extractive` mode. This mode is retrieval plus deterministic rendering, **not an LLM-generated answer**. It preserves the useful part of the response when a provider is unavailable.
+
+### Example from the verified local container
+
+For the committed `examples/briefing.json`, the unchanged model returned approximately **0.046237**, or **4.62%**. The response included these excerpts with source IDs:
+
+- “The minimum opening deposit is INR 10,000.” — `demo12-minimum`
+- “The deposit term is 12 months.” — `demo12-duration`
+- “Early withdrawal is permitted with a penalty. The penalty amount is not specified in this demonstration document.” — `demo12-withdrawal`
+
+The response also includes eligibility limitations and questions about intended amount, access to funds and separately checked eligibility. These are fictional product terms, not information about a real offer. The earlier conversational 18% example was illustrative; it is not this customer's measured model result.
+
+### Optional LLM setup
+
+The provider adapter expects an OpenAI-compatible `POST /chat/completions` API, not any arbitrary provider protocol. The base URL, model name and key must match your provider's documentation. No provider is assumed or preselected, and no key has been supplied or committed.
+
+Set variables in the terminal where you start Uvicorn:
+
+```bash
+export LLM_BASE_URL='https://your-provider.example/v1'
+export LLM_MODEL='your-model-name'
+read -s LLM_API_KEY
+export LLM_API_KEY
+```
+
+The `read -s` command waits for you to paste the key without echoing it. Restart Uvicorn in that environment. Change `use_llm` to true in a local copy of the example request. `.env.example` lists placeholders only; this application **does not automatically load `.env` files**. Docker users can explicitly pass a local ignored env file with `docker run --env-file .env ...`; never copy it into an image or Git.
+
+When requested and configured, the adapter sends only the question and retrieved demonstration text to the provider. It does not send customer features, balance or score. Do not place private customer information in the question. Provider use may incur charges. Requests have a 15-second HTTP timeout, no redirects, no automatic retry, and a small output-token limit. This is a bounded demo, not a rate-limited public service. The URL is server configuration, not user input; HTTPS is required except for local development hosts.
+
+### Why generated facts cannot replace source facts
+
+The LLM is constrained to select source IDs and follow-up question IDs. Code rejects unknown IDs, malformed JSON, extra fields and empty evidence selections. It then renders exact text from the retrieved sources. No free-form LLM financial advice or generated numeric score is shown.
+
+This is **constrained retrieval-augmented generation/curation**, rather than an unrestricted conversational assistant. It teaches the integration while reducing unsupported claims. Documents and questions are treated as untrusted content, not instructions. Allowlisting output IDs prevents a prompt from injecting a fabricated interest rate or another product's terms into the rendered answer. It does not guarantee the LLM always chooses the most relevant valid passage; relevance still needs evaluation.
+
+`llm_status=not_configured` means one or more variables are missing. Network failure, provider errors, unsupported protocol or invalid output trigger extractive fallback. Logs do not print credentials or provider payloads. If knowledge loading or briefing construction fails, the enriched route preserves the numerical score with an unavailable notice. Original `/predict` remains independent of provider availability.
+
+### Important interpretation limits
+
+The historical `balance` field is in euros. Demo terms are in INR. We deliberately make no comparison between the two, infer no affordability and perform no currency conversion. Subscription likelihood is not eligibility or suitability. Retrieved terms cannot explain why the classifier produced its score. Model-specific attribution is a separate future implementation.
+
+Unknown or unsupported questions may yield no evidence, but lexical overlap can still produce irrelevant excerpts. For example, asking an interest-rate question containing the word “deposit” may retrieve deposit passages without a rate. The application quotes those passages rather than inventing a rate; the user must see that the requested fact is absent. A larger evaluation set and better abstention remain necessary.
+
+### Evaluation and CI
+
+```bash
+python -m pytest -q
+python scripts/evaluate_retrieval.py
+```
+
+The new tests exercise product isolation, unknown questions, exact-source rendering, validated provider selections, forged source IDs, empty evidence, provider timeout/missing credentials, unchanged scores and knowledge failure isolation. Provider behaviour is simulated using HTTPX mock transport; no paid call is made by tests.
+
+Six handwritten retrieval checks cover both products, expected top matches and a no-overlap query. They are a regression fixture, not a general benchmark or proof of semantic understanding. Expand it with paraphrases, misleading overlaps, missing facts and adversarial questions before claiming broader retrieval quality.
+
+GitHub CI installs FAISS, runs tests and retrieval checks, trains the model, builds the container and sends real HTTP requests to both prediction endpoints. `scripts/check_api.py` verifies the same numerical score and product-scoped citations in the running container. No LLM secret is needed in CI. Live provider compatibility cannot be verified until a provider is configured; simulated adapter tests are labelled as such.
+
+For future monitoring, track retrieval hit/miss rates, question classes, response modes, provider timeouts, latency and cost, separately from predictive model metrics. Product-document updates require retrieval evaluation; they do not require classifier retraining. Keep the document hash, prompt/adapter version and provider model alongside release evidence. Public hosting, authentication, rate limits, neural embeddings and actual AWS deployment remain separate future work.

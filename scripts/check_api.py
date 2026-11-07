@@ -32,7 +32,16 @@ def check(base_url):
         assert error.code == 422, error.code
     else:
         raise AssertionError("Invalid customer should return HTTP 422")
-    print(f"PASS: health, prediction schema/range, model parity, invalid input; probability={probability}")
+    payload = {"customer": customer, "product_id": "demo-12-month", "use_llm": False}
+    request = Request(base_url + "/predict/briefing", data=json.dumps(payload).encode(),
+                      headers={"Content-Type": "application/json"})
+    with urlopen(request, timeout=10) as response:
+        enriched = json.load(response)
+    assert enriched["subscription_probability"] == probability
+    assert enriched["briefing"]["mode"] == "extractive"
+    assert enriched["briefing"]["sources"]
+    assert all(s["id"].startswith("demo12-") for s in enriched["briefing"]["sources"])
+    print(f"PASS: health, prediction schema/range, model parity, invalid input, grounded product briefing; probability={probability}")
 
 
 if __name__ == "__main__":

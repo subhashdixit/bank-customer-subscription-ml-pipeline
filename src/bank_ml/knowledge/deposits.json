@@ -1,0 +1,18 @@
+{
+  "version": "demo-2026-11-08-v1",
+  "fictional": true,
+  "products": [
+    {"id": "demo-12-month", "name": "Demo 12-Month Term Deposit", "currency": "INR", "sources": [
+      {"id": "demo12-minimum", "section": "2. Minimum deposit", "text": "The minimum opening deposit is INR 10,000."},
+      {"id": "demo12-duration", "section": "3. Duration", "text": "The deposit term is 12 months."},
+      {"id": "demo12-withdrawal", "section": "4. Early withdrawal", "text": "Early withdrawal is permitted with a penalty. The penalty amount is not specified in this demonstration document."},
+      {"id": "demo12-eligibility", "section": "5. Eligibility and suitability", "text": "Eligibility must be checked separately. Subscription likelihood does not establish eligibility or suitability."}
+    ]},
+    {"id": "demo-6-month", "name": "Demo 6-Month Term Deposit", "currency": "INR", "sources": [
+      {"id": "demo6-minimum", "section": "2. Minimum deposit", "text": "The minimum opening deposit is INR 5,000."},
+      {"id": "demo6-duration", "section": "3. Duration", "text": "The deposit term is 6 months."},
+      {"id": "demo6-withdrawal", "section": "4. Early withdrawal", "text": "Early withdrawal conditions are not provided. Consult the approved terms before discussing withdrawal."},
+      {"id": "demo6-eligibility", "section": "5. Eligibility and suitability", "text": "Eligibility must be checked separately. Subscription likelihood does not establish eligibility or suitability."}
+    ]}
+  ]
+}
