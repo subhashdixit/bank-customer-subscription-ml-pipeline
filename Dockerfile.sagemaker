@@ -1,0 +1,8 @@
+# Build the normal image first; use its verified layers as the base.
+ARG APP_IMAGE=bank-ml:web
+FROM ${APP_IMAGE}
+ENV PORT=8080 RELEASE_DIR=/opt/ml/model ALLOW_LLM_REQUESTS=false
+EXPOSE 8080
+# SageMaker may append "serve"; the module accepts/ignores that argument.
+ENTRYPOINT ["python", "-m", "bank_ml.serve"]
+CMD []

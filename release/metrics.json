@@ -1,0 +1,35 @@
+{
+  "train_rows": 36168,
+  "test_rows": 9043,
+  "split": "first 80% / final 20%, chronological",
+  "test_subscription_rate": 0.31582439455932765,
+  "average_precision": 0.5500912540102276,
+  "roc_auc": 0.7173140267906096,
+  "precision_at_0_5": 0.704225352112676,
+  "recall_at_0_5": 0.052521008403361345,
+  "training_subscription_rate": 0.06726940942269409,
+  "features": [
+    "age",
+    "balance",
+    "previous",
+    "job",
+    "marital",
+    "education",
+    "default",
+    "housing",
+    "loan",
+    "poutcome"
+  ],
+  "excluded": [
+    "contact",
+    "day",
+    "month",
+    "duration",
+    "campaign",
+    "pdays"
+  ],
+  "data_sha256": "d1513ec63b385506f7cfce9f2c5caa9fe99e7ba4e8c3fa264b3aaf0f849ed32d",
+  "python": "3.10.0",
+  "sklearn": "1.7.2",
+  "limitations": "Educational baseline; no hyperparameter tuning or probability calibration. Chronological holdout is not a customer-group split."
+}

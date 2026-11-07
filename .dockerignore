@@ -2,6 +2,6 @@
 !pyproject.toml
 !src/
 !src/**
-!artifacts/
-!artifacts/model.joblib
+!release/
+!release/**
 **/__pycache__/

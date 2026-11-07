@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bank Customer Subscription · Campaign Lab</title>
+  <link rel="stylesheet" href="/static/app.css"><script src="/static/app.js" defer></script>
+</head>
+<body>
+<header><a class="brand" href="/">BANK <span>/</span> CAMPAIGN LAB</a><span class="badge">ML + document retrieval</span></header>
+<main>
+  <div class="intro"><div class="eyebrow">BANK CUSTOMER SUBSCRIPTION</div><h1>A prediction.<br>A little more context.</h1><p>Explore a customer's estimated subscription likelihood, then read the deposit terms that inform the conversation.</p></div>
+  <div class="demo-note"><strong>Learning demo.</strong> Use fictional customer details only. Products are fictional; scores are historical model estimates, not eligibility decisions or financial advice.</div>
+  <div class="workspace">
+    <section class="card"><div class="section-heading"><div><span class="step">01 / INPUT</span><h2>Customer & offer</h2></div><button type="button" class="text-button" id="reset">Reset example</button></div>
+      <form id="prediction-form">
+        <p class="hint">The form starts with a fictional example. Balances use the original dataset's euros; demo product terms use INR and are not compared.</p>
+        <div class="grid">
+          <label>Age<input name="age" type="number" min="18" max="120" step="1" value="35" required></label>
+          <label>Balance (EUR)<input name="balance" type="number" step="any" value="1200" required></label>
+          <label>Job<select name="job"><option value="technician">Technician</option><option value="admin.">Administrator</option><option>management</option><option>services</option><option>retired</option><option>student</option><option>unemployed</option><option>blue-collar</option><option>self-employed</option><option>entrepreneur</option><option>housemaid</option><option>unknown</option></select></label>
+          <label>Marital status<select name="marital"><option>married</option><option>single</option><option>divorced</option></select></label>
+          <label>Education<select name="education"><option>secondary</option><option>primary</option><option>tertiary</option><option>unknown</option></select></label>
+          <label>Previous contacts<input name="previous" type="number" min="0" step="1" value="1" required></label>
+          <label>Credit in default<select name="default"><option>no</option><option>yes</option></select></label>
+          <label>Housing loan<select name="housing"><option>yes</option><option>no</option></select></label>
+          <label>Personal loan<select name="loan"><option>no</option><option>yes</option></select></label>
+          <label>Previous campaign outcome<select name="poutcome"><option>unknown</option><option>success</option><option>failure</option><option>other</option></select></label>
+        </div>
+        <div class="divider"></div>
+        <label>Demo deposit product<select id="product" name="product_id" required><option value="demo-12-month">Demo 12-Month Term Deposit</option><option value="demo-6-month">Demo 6-Month Term Deposit</option></select></label>
+        <label class="question">What would you like to check?<input name="question" maxlength="1000" value="minimum deposit duration early withdrawal eligibility" required></label>
+        <button class="primary" id="submit" type="submit">Predict & retrieve context <span aria-hidden="true">→</span></button>
+        <p class="hint">No LLM API call is needed for this extractive demo.</p>
+      </form>
+    </section>
+    <section class="card output" aria-labelledby="result-heading"><span class="step">02 / RESULT</span><h2 id="result-heading">Your prediction briefing</h2>
+      <p id="status" role="status" aria-live="polite">Ready when you are. Run the example or change the inputs.</p>
+      <div id="error" role="alert" hidden></div>
+      <div id="result" hidden>
+        <div class="score"><span id="probability"></span><span>estimated subscription likelihood</span></div>
+        <p class="hint">The selected product changes retrieved context, not this score. The historical classifier is not product-specific or calibrated.</p>
+        <div class="result-title"><h3>Product context</h3><span class="pill" id="mode"></span></div>
+        <p id="context-message"></p><div id="evidence"></div>
+        <h3>Questions to confirm</h3><ul id="followups"></ul>
+        <details><summary>Sources & limitations</summary><ul id="limitations"></ul><p id="provenance" class="hint"></p></details>
+        <details><summary>View API response</summary><pre id="raw"></pre></details>
+      </div>
+      <div id="placeholder"><div class="empty-mark" aria-hidden="true">↗</div><h3>From a number to a conversation</h3><p>The model supplies a score. Retrieval supplies exact product passages and their sources. Neither establishes suitability.</p></div>
+    </section>
+  </div>
+  <section class="how"><h2>One application, three steps</h2><div class="how-grid"><div><b>01</b><h3>Predict</h3><p>A saved scikit-learn pipeline prepares the customer fields and estimates subscription likelihood.</p></div><div><b>02</b><h3>Retrieve</h3><p>Local TF-IDF vectors and FAISS find matching sections within the selected demo product.</p></div><div><b>03</b><h3>Read the evidence</h3><p>Exact excerpts, citations and follow-up questions accompany the unchanged model score.</p></div></div></section>
+</main><footer><span>Bank Customer Subscription ML Deployment · Educational demo</span><nav><a href="/docs">API explorer</a><a href="https://github.com/subhashdixit/bank-customer-subscription-ml-pipeline#readme" target="_blank" rel="noopener">Read the learning guide ↗</a></nav></footer>
+</body></html>

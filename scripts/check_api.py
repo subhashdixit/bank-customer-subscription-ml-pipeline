@@ -2,6 +2,7 @@
 import argparse
 import json
 import math
+import os
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
@@ -11,6 +12,10 @@ def check(base_url):
     base_url = base_url.rstrip("/")
     with urlopen(base_url + "/health", timeout=10) as response:
         assert json.load(response) == {"status": "ready"}
+    with urlopen(base_url + "/", timeout=10) as response:
+        assert "Bank Customer Subscription" in response.read().decode()
+    with urlopen(base_url + "/openapi.json", timeout=10) as response:
+        assert "/predict/briefing" in json.load(response)["paths"]
     customer = json.loads(Path("examples/customer.json").read_text())
     request = Request(base_url + "/predict", data=json.dumps(customer).encode(),
                       headers={"Content-Type": "application/json"})
@@ -22,7 +27,7 @@ def check(base_url):
     # Compare the actual container result against the model used to build it.
     import joblib
     from bank_ml.predict import predict
-    expected = predict(joblib.load("artifacts/model.joblib"), [customer])[0]["subscription_probability"]
+    expected = predict(joblib.load(os.getenv("MODEL_PATH", "artifacts/model.joblib")), [customer])[0]["subscription_probability"]
     assert math.isclose(probability, expected, rel_tol=1e-6, abs_tol=1e-8), (probability, expected)
     request = Request(base_url + "/predict", data=json.dumps(dict(customer, age=-1)).encode(),
                       headers={"Content-Type": "application/json"})

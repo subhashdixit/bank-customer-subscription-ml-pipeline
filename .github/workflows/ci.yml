@@ -42,7 +42,22 @@ jobs:
             sleep 2
           done
           test "$ready" = true
-          python scripts/check_api.py
+          MODEL_PATH=release/model.joblib python scripts/check_api.py
+
+      - name: Build managed-inference wrapper
+        run: docker build -f Dockerfile.sagemaker --build-arg APP_IMAGE=bank-ml:test -t bank-ml:sagemaker .
+      - name: Check managed-inference container contract locally
+        shell: bash
+        run: |
+          docker run -d --name bank-sagemaker -p 127.0.0.1:18080:8080 -v "$PWD/release:/opt/ml/model:ro" bank-ml:sagemaker serve
+          trap 'docker logs bank-sagemaker; docker rm -f bank-sagemaker' EXIT
+          ready=false
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:18080/ping; then ready=true; break; fi
+            sleep 2
+          done
+          test "$ready" = true
+          python scripts/check_sagemaker.py
 
   real-data:
     if: github.event_name == 'workflow_dispatch' && inputs.real_data

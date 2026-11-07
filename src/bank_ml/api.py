@@ -39,11 +39,13 @@ async def lifespan(app):
 app = FastAPI(title="Bank subscription prediction", lifespan=lifespan)
 
 
+@app.get("/ping", include_in_schema=False)
 @app.get("/health")
 def health():
     return {"status": "ready"}
 
 
+@app.post("/invocations", include_in_schema=False)
 @app.post("/predict")
 def prediction(customer: Customer):
     try:
@@ -69,6 +71,8 @@ def products():
 
 @app.post("/predict/briefing")
 def enriched_prediction(request: BriefingRequest):
+    if request.use_llm and os.getenv("ALLOW_LLM_REQUESTS", "true").lower() != "true":
+        raise HTTPException(status_code=403, detail="LLM calls are disabled on this public demo")
     score = prediction(request.customer)
     knowledge = app.state.knowledge
     if knowledge is None:
@@ -81,3 +85,9 @@ def enriched_prediction(request: BriefingRequest):
         logging.getLogger(__name__).warning("Briefing unavailable; numerical prediction preserved")
         context = {"mode": "unavailable", "message": "Briefing unavailable; original score preserved."}
     return dict(score, briefing=context)
+
+
+# Mount last so API routes retain their own validation and OpenAPI documentation.
+from a2wsgi import WSGIMiddleware
+from bank_ml.web import create_web_app
+app.mount("/", WSGIMiddleware(create_web_app()))

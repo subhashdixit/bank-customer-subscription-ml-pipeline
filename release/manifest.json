@@ -1,0 +1,11 @@
+{
+  "release": "bank-subscription-baseline-v1",
+  "training_data": "UCI bank-full.csv",
+  "dataset_sha256": "d1513ec63b385506f7cfce9f2c5caa9fe99e7ba4e8c3fa264b3aaf0f849ed32d",
+  "sklearn": "1.7.2",
+  "files": {
+    "model.joblib": "90e1cde6aa2d97f36e4a01ba4a4184da3adf5e78aa0e3a2a96dff5c5c96ff92b",
+    "metrics.json": "1749eaae79786a0d941d1a1022c22728358b3adf62b680e4219fe619f9987e25"
+  },
+  "limitations": "Historical educational baseline; not calibrated or approved for business use."
+}

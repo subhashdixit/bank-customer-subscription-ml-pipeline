@@ -1,0 +1,4 @@
+ARG APP_IMAGE=bank-ml:web
+FROM ${APP_IMAGE}
+ENTRYPOINT ["python", "-m", "bank_ml.train", "--data", "/opt/ml/input/data/train/bank-full.csv", "--output", "/opt/ml/model"]
+CMD []
