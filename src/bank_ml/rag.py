@@ -38,7 +38,7 @@ class ProductKnowledge:
         for product in json.loads(raw)["products"]:
             sources = product["sources"]
             vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words="english")
-            vectors = vectorizer.fit_transform([s["text"] for s in sources]).toarray().astype("float32")
+            vectors = vectorizer.fit_transform([s["section"] + " " + s["text"] for s in sources]).toarray().astype("float32")
             faiss.normalize_L2(vectors)
             index = faiss.IndexFlatIP(vectors.shape[1])
             index.add(vectors)

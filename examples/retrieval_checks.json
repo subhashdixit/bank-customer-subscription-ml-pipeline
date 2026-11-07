@@ -1,8 +1,32 @@
 [
-  {"product_id":"demo-12-month","question":"minimum opening deposit","expected":"demo12-minimum"},
-  {"product_id":"demo-6-month","question":"minimum opening deposit","expected":"demo6-minimum"},
-  {"product_id":"demo-12-month","question":"deposit term months","expected":"demo12-duration"},
-  {"product_id":"demo-6-month","question":"early withdrawal conditions","expected":"demo6-withdrawal"},
-  {"product_id":"demo-12-month","question":"eligibility suitability","expected":"demo12-eligibility"},
-  {"product_id":"demo-12-month","question":"quantum aardvark","expected":null}
+  {
+    "product_id": "demo-12-month",
+    "question": "minimum opening deposit",
+    "expected": "demo12-minimum"
+  },
+  {
+    "product_id": "demo-6-month",
+    "question": "minimum opening deposit",
+    "expected": "demo6-minimum"
+  },
+  {
+    "product_id": "demo-12-month",
+    "question": "duration",
+    "expected": "demo12-duration"
+  },
+  {
+    "product_id": "demo-6-month",
+    "question": "early withdrawal conditions",
+    "expected": "demo6-withdrawal"
+  },
+  {
+    "product_id": "demo-12-month",
+    "question": "eligibility suitability",
+    "expected": "demo12-eligibility"
+  },
+  {
+    "product_id": "demo-12-month",
+    "question": "quantum aardvark",
+    "expected": null
+  }
 ]
